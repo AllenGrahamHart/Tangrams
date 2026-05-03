@@ -29,6 +29,7 @@ class TurnLog(BaseModel):
     position: int | None = None
     text: str
     raw_text: str | None = None
+    partner_visible_text: str | None = None
     thinking: str | None = None
     actions: list[PlacementAction] = Field(default_factory=list)
     handoff: Handoff
@@ -64,6 +65,11 @@ class Manifest(BaseModel):
     timestamp_end: str | None = None
     config: dict[str, Any]
     pair_ids: list[int]
+    git_commit: str | None = None
+    git_dirty: bool | None = None
+    prompt_version: str | None = None
+    prompt_sha256: str | None = None
+    stimuli_sha256: dict[str, str] = Field(default_factory=dict)
     trial_files: list[str] = Field(default_factory=list)
     summary: dict[str, Any] = Field(default_factory=dict)
 
@@ -106,4 +112,3 @@ def load_trial_logs(run_dir: Path) -> list[TrialLog]:
     for path in sorted(run_dir.glob("pair_*/trial_*.json")):
         logs.append(TrialLog.model_validate(read_json(path)))
     return logs
-

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import random
+import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable
@@ -8,7 +10,9 @@ from typing import Callable
 from tangram.client import AnthropicTurnClient, TurnClient
 from tangram.config import ExperimentConfig, default_results_dir, default_stimuli_dir
 from tangram.logging import Manifest, TrialLog, utc_now_iso, write_manifest
+from tangram.prompts import DIRECTOR_SYSTEM, MATCHER_SYSTEM, PROMPT_VERSION
 from tangram.runner import PairRunner
+from tangram.stimuli import FIGURE_IDS, load_tangrams
 
 
 ClientFactory = Callable[[], TurnClient]
@@ -31,6 +35,11 @@ def run_experiment(
         timestamp_start=utc_now_iso(),
         config=config.model_dump(mode="json"),
         pair_ids=list(range(config.pairs)),
+        git_commit=current_git_commit(),
+        git_dirty=current_git_dirty(),
+        prompt_version=PROMPT_VERSION,
+        prompt_sha256=prompt_sha256(),
+        stimuli_sha256=stimuli_sha256(stimuli_root, config.figures),
     )
     write_manifest(results_root, manifest)
 
@@ -63,6 +72,45 @@ def run_experiment(
     return manifest
 
 
+def prompt_sha256() -> str:
+    prompt_blob = "\n\n".join([PROMPT_VERSION, DIRECTOR_SYSTEM, MATCHER_SYSTEM])
+    return hashlib.sha256(prompt_blob.encode("utf-8")).hexdigest()
+
+
+def stimuli_sha256(stimuli_dir: Path, figures: int) -> dict[str, str]:
+    figure_ids = tuple(FIGURE_IDS[:figures])
+    return {
+        figure_id: stimulus.sha256
+        for figure_id, stimulus in load_tangrams(stimuli_dir, figure_ids).items()
+    }
+
+
+def current_git_commit() -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return result.stdout.strip() or None
+
+
+def current_git_dirty() -> bool | None:
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return bool(result.stdout.strip())
+
+
 def summarize_logs(logs: list[TrialLog]) -> dict:
     if not logs:
         return {}
@@ -83,4 +131,3 @@ def summarize_logs(logs: list[TrialLog]) -> dict:
         "total_tokens": {"input": total_input, "output": total_output, "thinking": total_thinking},
         "estimated_cost_usd": round(total_cost, 6),
     }
-

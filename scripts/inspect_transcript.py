@@ -30,6 +30,9 @@ def main() -> None:
         label = "D" if turn.speaker == "director" else "M"
         position = f"p{turn.position}" if turn.position else "--"
         print(f"{turn.turn_index:03d} {label} {position} [{turn.handoff}] {turn.text}")
+        expected_visible = f"{'Director' if turn.speaker == 'director' else 'Matcher'}: {turn.text}"
+        if turn.partner_visible_text and turn.partner_visible_text != expected_visible:
+            print(f"    visible: {turn.partner_visible_text}")
         for action in turn.actions:
             print(
                 f"    action: place image {action.figure_image_n} "
@@ -41,4 +44,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

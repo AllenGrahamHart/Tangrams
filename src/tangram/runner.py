@@ -152,12 +152,14 @@ class PairRunner:
                     continue_speaker = None
                     continue_chain = 0
 
+                partner_visible_text = visible_partner_message(speaker, parsed.text)
                 turn = TurnLog(
                     turn_index=len(log.turns),
                     speaker=speaker,
                     position=turn_position,
                     text=parsed.text,
                     raw_text=parsed.raw_text,
+                    partner_visible_text=partner_visible_text,
                     thinking=response.thinking,
                     actions=parsed.actions,
                     handoff=effective_handoff,
@@ -168,7 +170,12 @@ class PairRunner:
                 log.turns.append(turn)
                 log.total_tokens = log.total_tokens.add(response.tokens)
 
-                self._append_turn_to_histories(speaker, response.raw_content, response.text, parsed.text)
+                self._append_turn_to_histories(
+                    speaker,
+                    response.raw_content,
+                    response.text,
+                    partner_visible_text,
+                )
 
                 if speaker == "director" and parsed.handoff == "done":
                     log.termination = "done"
@@ -240,14 +247,12 @@ class PairRunner:
         speaker: Speaker,
         raw_content: list[dict[str, Any]],
         raw_text: str,
-        visible_text: str,
+        partner_visible_text: str,
     ) -> None:
         partner: Speaker = "matcher" if speaker == "director" else "director"
         assistant_content = raw_content or [{"type": "text", "text": raw_text}]
         self.histories[speaker].append({"role": "assistant", "content": assistant_content})
-        self.histories[partner].append(
-            {"role": "user", "content": visible_partner_message(speaker, visible_text)}
-        )
+        self.histories[partner].append({"role": "user", "content": partner_visible_text})
 
     def _resolve_actions(
         self,
