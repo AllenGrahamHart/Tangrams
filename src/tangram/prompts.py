@@ -5,20 +5,16 @@ from collections.abc import Sequence
 from tangram.stimuli import invert_image_mapping
 
 
-PROMPT_VERSION = "v1"
+PROMPT_VERSION = "v2_paper_minimal"
 
 
-DIRECTOR_SYSTEM = """You are participating in a communication experiment. You and a partner have the same 12 abstract figures in front of you, but in different private image orderings. Your job is to direct your partner to rearrange their figures so the order matches yours.
+DIRECTOR_SYSTEM = """You are participating in a communication task with a partner.
 
-You will go through positions 1 to 12 in order. For each position, describe the figure that goes there well enough that your partner can identify it from their set and place it correctly.
+You and your partner have the same 12 abstract figures, but arranged in different orders. Your partner cannot see your arrangement, and you cannot see your partner's arrangement. You can only communicate by sending messages.
 
-You cannot see your partner's arrangement. They cannot see yours. You can only communicate by talking back and forth.
+Your job is to get your partner to arrange their figures in the same order as yours, quickly and accurately. Go through the positions in order from 1 to 12. You may talk back and forth as much as needed.
 
-Your private image numbers are for your own use only. Never say "image 1", "my image 1", or any other image number to your partner. Your partner's private image numbers are different. Describe only the figure itself.
-
-After your partner indicates they have placed the figure correctly, move on to the next position. If you are unsure, ask or clarify.
-
-You are speaking, not writing. Use natural conversational language. It is fine to be tentative, to use phrases like "kind of like..." or "looks like...", to pause mid-sentence, to ask "you know the one I mean?", or to revise yourself. Your partner can ask for clarification or propose their own description.
+Your private image numbers are only a way for you to view your own figures in this interface. Your partner's private image numbers may be different, so do not mention image numbers in your messages. Refer to the figures however you naturally would.
 
 Your turn must end with exactly one of these tags:
 <yield/> means pass the floor to your partner.
@@ -28,19 +24,17 @@ Your turn must end with exactly one of these tags:
 Emit exactly one of these tags at the very end of every response."""
 
 
-MATCHER_SYSTEM = """You are participating in a communication experiment. You and a partner have the same 12 abstract figures in front of you, but in different private image orderings. Your partner's job is to direct you to rearrange your figures so the order matches theirs.
+MATCHER_SYSTEM = """You are participating in a communication task with a partner.
 
-You cannot see your partner's arrangement. They cannot see yours. You can only communicate by talking back and forth.
+You and your partner have the same 12 abstract figures, but arranged in different orders. Your partner has a target order. Your partner cannot see your arrangement, and you cannot see your partner's arrangement. You can only communicate by sending messages.
 
-Your private image numbers are for your own use only. Never say "image 1", "my image 1", or any other image number to your partner. Your partner's private image numbers are different. Use private image numbers only inside <place/> action tags, never in spoken text.
+Your job is to rearrange your figures to match your partner's order, quickly and accurately. You may talk back and forth as much as needed.
 
-For each position your partner describes, identify which figure they mean and place it. You can ask clarifying questions, propose your own description, acknowledge, or push back if you think there is a mistake.
+Your private image numbers are only a way for you to view your own figures in this interface. Your partner's private image numbers may be different, so do not mention image numbers in your messages. Use private image numbers only inside <place/> action tags.
 
-When you decide to place a figure, emit exactly one placement action before your handoff tag:
+When you place a figure, emit a placement action before your handoff tag:
 <place figure="N" position="P"/>
-where N is your private image number, from 1 to 12, and P is the target position, from 1 to 12. The placement action is read by the experiment software and is not spoken to your partner. Place at most one figure per turn.
-
-You are speaking, not writing. Use natural conversational language.
+where N is your private image number, from 1 to 12, and P is the target position, from 1 to 12. The placement action is read by the experiment software and is not spoken to your partner.
 
 Your turn must end with exactly one of these tags:
 <yield/> means pass the floor to your partner.
@@ -63,7 +57,7 @@ def director_trial_text(trial: int, target_order: Sequence[str], image_mapping: 
 Your target ordering is:
 {ordering_lines(target_order, image_mapping)}
 
-Begin with position 1. Remember: do not tell your partner private image numbers; describe the figure itself."""
+Begin with position 1. Remember: do not tell your partner private image numbers."""
 
 
 def matcher_trial_text(trial: int, starting_order: Sequence[str], image_mapping: dict[int, str]) -> str:
