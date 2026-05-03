@@ -1,0 +1,168 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\title{A Pilot LLM Replication of Clark and Wilkes-Gibbs' Tangram Task}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Overview}
+
+Clark and Wilkes-Gibbs (1986) showed that pairs of human participants rapidly converge on concise referring expressions when they repeatedly collaborate on a Tangram arrangement task. In the original study, a director and matcher had the same 12 abstract Tangram figures in different orders. The director's task was to get the matcher to rearrange their figures into the director's order, proceeding through positions 1--12. The same pair repeated the task for six trials. The central finding was a large reduction in director words and turns per figure across trials, accompanied by very high accuracy.
+
+We ran a first pilot version of the same task using Claude Haiku 4.5 as both director and matcher. The instructions were intentionally minimal: the models were told the task situation, the hidden-arrangement constraint, the 1--12 ordering procedure, and the required text-interface actions. We did not instruct the models to use particular descriptive strategies, to be tentative, to compare figures, or to ask clarifying questions. Thus, the run was designed as a close text-only analogue of the paper's task constraints rather than an optimized prompt for model performance.
+
+This report summarizes one complete Haiku pair over six trials. It should be treated as a pilot, not as an inferential comparison to the full human sample.
+
+\section*{Method}
+
+The model was \texttt{claude-haiku-4-5-20251001}. Both roles retained the full prior dialogue across trials, as in the human repeated-reference design. The 12 Tangram figures were shown as separate images. Internal figure labels were used only for scoring and were not presented as shared labels. Each participant had private image numbers, independently randomized, and these were not valid communicative references.
+
+The run used a minimal paper-style instruction set. All six trials terminated normally, and the resulting transcripts are complete for all six trials.
+
+\section*{Primary Results}
+
+\subsection*{Words per figure}
+
+The strongest contrast with the human data is in the word-count trajectory. Human directors in Clark and Wilkes-Gibbs showed a steep reduction from about 41 words per figure on trial 1 to about 8 by trial 6. Haiku did not show this shortening. Its director produced a little over 100 words per figure on every trial.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{rrrr}
+\toprule
+Trial & Haiku words/figure & Human words/figure & Difference \\
+\midrule
+1 & 107.50 & 41 & +66.50 \\
+2 & 109.33 & 19 & +90.33 \\
+3 & 107.42 & 13 & +94.42 \\
+4 & 108.50 & 11 & +97.50 \\
+5 & 107.25 & 9 & +98.25 \\
+6 & 106.58 & 8 & +98.58 \\
+\bottomrule
+\end{tabular}
+\caption{Mean director words per figure. Human values are the published approximate means from Clark and Wilkes-Gibbs.}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.72\linewidth]{report_figures/haiku_45_words_per_trial.png}
+\caption{Words per figure by trial.}
+\end{figure}
+
+\subsection*{Turns per figure}
+
+Human directors also reduced their turns per figure across trials, from about 3.7 to about 1.2. Haiku used about one director turn per figure throughout. This is not the same pattern as the human data. Rather than converging from initially extended negotiation to later concise exchanges, Haiku generally offered a long description and the matcher placed a figure quickly.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{rrr}
+\toprule
+Trial & Haiku director turns/figure & Human director turns/figure \\
+\midrule
+1 & 1.17 & 3.7 \\
+2 & 1.08 & 1.9 \\
+3 & 1.08 & 1.4 \\
+4 & 1.08 & 1.3 \\
+5 & 1.08 & 1.1 \\
+6 & 1.08 & 1.2 \\
+\bottomrule
+\end{tabular}
+\caption{Mean director turns per figure.}
+\end{table}
+
+\subsection*{Accuracy}
+
+The original human error rate was about 2\%. Haiku's accuracy was much lower and did not improve across trials. Across the six trials, Haiku placed 32 of 72 figures correctly, for an overall accuracy of 44.4\%.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{rrr}
+\toprule
+Trial & Correct / 12 & Accuracy \\
+\midrule
+1 & 5 & .417 \\
+2 & 6 & .500 \\
+3 & 5 & .417 \\
+4 & 6 & .500 \\
+5 & 4 & .333 \\
+6 & 6 & .500 \\
+\bottomrule
+\end{tabular}
+\caption{Haiku placement accuracy by trial.}
+\end{table}
+
+\subsection*{Basic exchanges}
+
+In the human data, basic exchanges increased from 18\% on trial 1 to over 80\% by trials 4--6. Haiku's exchanges were basic in a different and less successful sense. After trial 1, every placement met our heuristic definition of a basic exchange: the director presented a reference and the matcher placed a figure in the first response. But this high basic-exchange rate co-occurred with low accuracy, suggesting premature acceptance rather than well-established shared reference.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{rrr}
+\toprule
+Trial & Haiku basic exchange rate & Human basic exchange rate \\
+\midrule
+1 & .50 & .18 \\
+2 & 1.00 & .55 \\
+3 & 1.00 & .75 \\
+4 & 1.00 & .80 \\
+5 & 1.00 & .88 \\
+6 & 1.00 & .84 \\
+\bottomrule
+\end{tabular}
+\caption{Basic exchange rate by trial.}
+\end{table}
+
+\subsection*{Position effects}
+
+Clark and Wilkes-Gibbs reported that, within a trial, later positions required fewer words because fewer candidate figures remained. This slope weakened across trials. Haiku did not show the same pattern. In this pilot, the estimated slope of words by position was approximately $-0.42$ in trial 1, $+3.85$ in trial 2, and $+2.79$ in trial 6. These values are not comparable to the human slope pattern of roughly $-4.6$, $-1.0$, and $-0.4$ for trials 1, 2, and 6 respectively. The position analysis should be read cautiously for a single pair, but it provides no evidence of the human-like within-trial economy.
+
+\subsection*{Figure-level difficulty}
+
+The paper reported figure-level differences, with Figure B hardest and Figure C easiest by word count. In the Haiku pilot, word count and accuracy were not tightly aligned. Figure B was again among the most verbally costly and was never placed correctly, but Figure J was also highly verbose while being placed correctly in every trial.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{rrrr}
+\toprule
+Figure & Haiku words/figure & Haiku turns/figure & Accuracy \\
+\midrule
+A & 86.83 & 0.83 & .000 \\
+B & 138.67 & 1.50 & .000 \\
+C & 94.83 & 1.00 & .167 \\
+D & 114.67 & 1.17 & .167 \\
+E & 132.67 & 1.33 & .167 \\
+F & 110.00 & 1.00 & .833 \\
+G & 118.33 & 1.17 & .833 \\
+H & 86.33 & 1.00 & .667 \\
+I & 90.00 & 0.83 & .667 \\
+J & 134.50 & 1.50 & 1.000 \\
+K & 102.67 & 1.00 & .667 \\
+L & 83.67 & 0.83 & .167 \\
+\bottomrule
+\end{tabular}
+\caption{Haiku figure-level difficulty over six trials. Each figure appeared once per trial.}
+\end{table}
+
+\section*{Qualitative Impression}
+
+The transcripts suggest that Haiku understood the formal mechanics of the task but did not develop efficient shared referring expressions. The director often produced long, generic descriptions using recurring terms such as diamond head, angular body, pointed extensions, or geometric figure. These descriptions were plausible but insufficiently discriminating among the 12 similar figures. The matcher frequently accepted and placed a figure immediately, even when the description could apply to several candidates. This produced a superficially efficient exchange structure but poor task success.
+
+In the human study, reduced word and turn counts reflected successful convergence on mutually accepted perspectives. In the Haiku pilot, low turn counts appear to reflect premature placement rather than mutual understanding. The model did not show the central Clark and Wilkes-Gibbs pattern: repeated collaboration did not yield shorter, stable, successful referring expressions.
+
+\section*{Limitations}
+
+This is a single-pair pilot and should not be treated as a model-level estimate. No manual qualitative coding has yet been performed for the richer categories in the paper, such as initial noun phrase type, repairs, expansions, replacements, follow-ups, analogical versus literal perspective, or holistic versus segmental description. Audio-dependent phenomena from the original study, including intonation and overlap, are not available in this text-only setting.
+
+The run used 2.41 million input tokens and 24,011 output tokens, with an estimated API cost of \$7.60. This has no human analogue but is useful for planning larger model samples.
+
+\section*{Conclusion}
+
+Under minimal instructions closely matching the task constraints of Clark and Wilkes-Gibbs, Claude Haiku 4.5 completed the six-trial Tangram task but performed poorly relative to human participants. It did not become more concise, did not become more accurate, and did not show evidence of the progressive conventionalization that characterized the human dialogues. The result is therefore a useful negative pilot: the model can enact the task protocol, but the collaborative process observed in human pairs does not emerge automatically from this setup.
+
+\end{document}

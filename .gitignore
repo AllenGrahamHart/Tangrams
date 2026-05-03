@@ -4,9 +4,15 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+/main.pdf
 
 results/*
 !results/.gitkeep
 !results/sample_run/
 !results/sample_run/**
-
