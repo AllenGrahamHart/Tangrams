@@ -1,0 +1,51 @@
+{
+  "config": {
+    "concurrency": 4,
+    "figures": 12,
+    "max_continue_chain": 5,
+    "max_turns_per_trial": 200,
+    "model": {
+      "max_tokens": 4096,
+      "model": "claude-sonnet-4-5",
+      "thinking_budget_tokens": 2000
+    },
+    "pairs": 1,
+    "prompt_variant": "default",
+    "run_id": "sample_run",
+    "seed": 42,
+    "trials": 6,
+    "use_fake_client": true
+  },
+  "pair_ids": [
+    0
+  ],
+  "run_id": "sample_run",
+  "summary": {
+    "accuracy_by_trial": {
+      "1": 1.0,
+      "2": 1.0,
+      "3": 1.0,
+      "4": 1.0,
+      "5": 1.0,
+      "6": 1.0
+    },
+    "estimated_cost_usd": 0.074655,
+    "mean_accuracy": 1.0,
+    "total_tokens": {
+      "input": 15000,
+      "output": 1977,
+      "thinking": 0
+    },
+    "trials": 6
+  },
+  "timestamp_end": "2026-05-03T08:42:57.167146Z",
+  "timestamp_start": "2026-05-03T08:42:57.157419Z",
+  "trial_files": [
+    "pair_0/trial_1.json",
+    "pair_0/trial_2.json",
+    "pair_0/trial_3.json",
+    "pair_0/trial_4.json",
+    "pair_0/trial_5.json",
+    "pair_0/trial_6.json"
+  ]
+}

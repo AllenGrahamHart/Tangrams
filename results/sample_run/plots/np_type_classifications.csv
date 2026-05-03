@@ -1,0 +1,73 @@
+pair_id,trial,position,utterance,np_type
+0,1,1,Position 1 is the straight upright bottle shape with a diamond top and a slanted foot at the bottom.,description
+0,1,2,"Position 2 is the low crawling animal shape, with a square head up on the left and a long body going right.",description
+0,1,3,"Position 3 is the flying bird shape stretched out sideways, with a little square on top and a long tail down to the right.",description
+0,1,4,"Position 4 is the figure sitting at a little table or bench, with a diamond head and one long leg down.",description
+0,1,5,Position 5 is the blocky pedestal shape with a diamond floating on top and a small point on the lower right.,description
+0,1,6,Position 6 is the dancer with a big triangular dress and two little arms or flags near the top.,description
+0,1,7,Position 7 is the zigzag standing person with a diamond head and a long triangular foot down to the left.,description
+0,1,8,Position 8 is the upright person with a diamond head and a flat arm sticking straight out to the left.,description
+0,1,9,Position 9 is the tall shape with two pointy pieces like ears or wings at the top and a long base sweeping right.,description
+0,1,10,"Position 10 is the tall person leaning forward with a blocky head and one bent leg, almost like someone stepping up.",description
+0,1,11,"Position 11 is the squat little figure with a wide skirt base and a tilted square head, kind of like a hunched witch.",description
+0,1,12,"Position 12 is the kneeling person with a diamond head, one sharp knee forward, and a jagged body underneath.",description
+0,2,1,Position 1 is the zigzag person.,elementary
+0,2,2,Position 2 is the stepping person.,elementary
+0,2,3,Position 3 is the diamond-head standing one.,elementary
+0,2,4,Position 4 is the flying bird.,elementary
+0,2,5,Position 5 is the bottle person.,elementary
+0,2,6,Position 6 is the crawling animal.,elementary
+0,2,7,Position 7 is the pedestal with a diamond.,elementary
+0,2,8,Position 8 is the pointy-eared one.,elementary
+0,2,9,Position 9 is the kneeling person.,elementary
+0,2,10,Position 10 is the dress dancer.,elementary
+0,2,11,Position 11 is the hunched witch.,elementary
+0,2,12,Position 12 is the table sitter.,elementary
+0,3,1,Position 1 is the kneeling person.,elementary
+0,3,2,Position 2 is the pointy-eared one.,elementary
+0,3,3,Position 3 is the table sitter.,elementary
+0,3,4,Position 4 is the bottle person.,elementary
+0,3,5,Position 5 is the hunched witch.,elementary
+0,3,6,Position 6 is the pedestal with a diamond.,elementary
+0,3,7,Position 7 is the flying bird.,elementary
+0,3,8,Position 8 is the dress dancer.,elementary
+0,3,9,Position 9 is the crawling animal.,elementary
+0,3,10,Position 10 is the zigzag person.,elementary
+0,3,11,Position 11 is the diamond-head standing one.,elementary
+0,3,12,Position 12 is the stepping person.,elementary
+0,4,1,Position 1 is bottle.,unclassified
+0,4,2,Position 2 is dancer.,unclassified
+0,4,3,Position 3 is pedestal.,unclassified
+0,4,4,Position 4 is zigzag.,unclassified
+0,4,5,Position 5 is diamond head.,unclassified
+0,4,6,Position 6 is bird.,unclassified
+0,4,7,Position 7 is stepping person.,unclassified
+0,4,8,Position 8 is crawler.,unclassified
+0,4,9,Position 9 is pointy ears.,unclassified
+0,4,10,Position 10 is sitter.,unclassified
+0,4,11,Position 11 is witch.,unclassified
+0,4,12,Position 12 is kneeler.,unclassified
+0,5,1,Position 1 is stepping person.,unclassified
+0,5,2,Position 2 is diamond head.,unclassified
+0,5,3,Position 3 is crawler.,unclassified
+0,5,4,Position 4 is kneeler.,unclassified
+0,5,5,Position 5 is bottle.,unclassified
+0,5,6,Position 6 is pedestal.,unclassified
+0,5,7,Position 7 is witch.,unclassified
+0,5,8,Position 8 is dancer.,unclassified
+0,5,9,Position 9 is zigzag.,unclassified
+0,5,10,Position 10 is pointy ears.,unclassified
+0,5,11,Position 11 is bird.,unclassified
+0,5,12,Position 12 is sitter.,unclassified
+0,6,1,Position 1 is sitter.,unclassified
+0,6,2,Position 2 is stepping person.,unclassified
+0,6,3,Position 3 is bottle.,unclassified
+0,6,4,Position 4 is pointy ears.,unclassified
+0,6,5,Position 5 is crawler.,unclassified
+0,6,6,Position 6 is kneeler.,unclassified
+0,6,7,Position 7 is bird.,unclassified
+0,6,8,Position 8 is zigzag.,unclassified
+0,6,9,Position 9 is pedestal.,unclassified
+0,6,10,Position 10 is witch.,unclassified
+0,6,11,Position 11 is diamond head.,unclassified
+0,6,12,Position 12 is dancer.,unclassified

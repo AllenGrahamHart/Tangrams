@@ -1,0 +1,63 @@
+# Tangram LLM Replication
+
+This repository runs an LLM version of Clark & Wilkes-Gibbs (1986), "Referring as a Collaborative Process." It pairs a director model and matcher model on the original 12 tangram figures for six repeated trials, logs each dialogue, and computes the headline measures from the paper.
+
+## Setup
+
+```bash
+uv sync --extra dev
+cp .env.example .env
+```
+
+Fill in `ANTHROPIC_API_KEY` in `.env` before real model runs. A fake deterministic mode is available for tests and dry runs.
+
+The stimuli live in `stimuli/tangrams/A.png` through `stimuli/tangrams/L.png`. They were split from the included paper screenshot so each API image block contains one tangram figure.
+
+## Run
+
+Fake development run:
+
+```bash
+uv run python -m scripts.run_experiment --pairs 1 --trials 6 --run-id sample_run --fake
+uv run python -m scripts.analyze_results --run-id sample_run
+uv run python -m scripts.inspect_transcript --run-id sample_run --pair 0 --trial 1
+```
+
+Real Anthropic run:
+
+```bash
+uv run python -m scripts.run_experiment \
+  --pairs 8 \
+  --trials 6 \
+  --model claude-sonnet-4-5 \
+  --thinking-budget 2000 \
+  --concurrency 4 \
+  --run-id my_first_run
+```
+
+Then analyze:
+
+```bash
+uv run python -m scripts.analyze_results --run-id my_first_run
+```
+
+## Outputs
+
+Each trial is written to:
+
+```text
+results/{run_id}/pair_{pair_id}/trial_{trial}.json
+```
+
+The run manifest is:
+
+```text
+results/{run_id}/manifest.json
+```
+
+Analysis writes plots, CSVs, and a summary report under `results/{run_id}/`.
+
+## Notes
+
+Word counts use whitespace tokenization over director dialogue, not API token counts. Image letters `A` through `L` are only internal IDs; prompts show each participant private numbered images with independently randomized image orders.
+

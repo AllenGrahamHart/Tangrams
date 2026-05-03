@@ -1,0 +1,12 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+results/*
+!results/.gitkeep
+!results/sample_run/
+!results/sample_run/**
+
