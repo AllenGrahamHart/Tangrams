@@ -80,6 +80,8 @@ Trial & Haiku director turns/figure & Human director turns/figure \\
 
 The original human error rate was about 2\%. Haiku's accuracy was much lower and did not improve across trials. Across the six trials, Haiku placed 32 of 72 figures correctly, for an overall accuracy of 44.4\%.
 
+This is nevertheless well above a random-ordering baseline. For a random permutation of 12 figures, the expected number of correct positions is 1 per trial, or 6 correct placements over six trials. Under the exact random-permutation distribution, obtaining 32 or more correct placements out of 72 has probability approximately $9.1 \times 10^{-14}$. Thus, Haiku was not guessing: it extracted useful information from the images and dialogue, but did so much less effectively than human participants.
+
 \begin{table}[h]
 \centering
 \begin{tabular}{rrr}
@@ -163,6 +165,6 @@ The run used 2.41 million input tokens and 24,011 output tokens, with an estimat
 
 \section*{Conclusion}
 
-Under minimal instructions closely matching the task constraints of Clark and Wilkes-Gibbs, Claude Haiku 4.5 completed the six-trial Tangram task but performed poorly relative to human participants. It did not become more concise, did not become more accurate, and did not show evidence of the progressive conventionalization that characterized the human dialogues. The result is therefore a useful negative pilot: the model can enact the task protocol, but the collaborative process observed in human pairs does not emerge automatically from this setup.
+Under minimal instructions closely matching the task constraints of Clark and Wilkes-Gibbs, Claude Haiku 4.5 completed the six-trial Tangram task and performed far above a random-ordering baseline. However, it performed poorly relative to human participants. It did not become more concise, did not become more accurate, and did not show evidence of the progressive conventionalization that characterized the human dialogues. The result is therefore a useful negative pilot: the model can extract some task-relevant information and enact the task protocol, but the collaborative process observed in human pairs does not emerge automatically from this setup.
 
 \end{document}
