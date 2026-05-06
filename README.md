@@ -41,6 +41,36 @@ Then analyze:
 uv run python -m scripts.analyze_results --run-id my_first_run
 ```
 
+## Local Human Web Sessions
+
+The same runner can also be used with human participants through a local browser UI. Start a local session:
+
+```bash
+uv run python -m scripts.run_web_session \
+  --director human \
+  --matcher human \
+  --trials 1 \
+  --run-id local_human_test
+```
+
+Open the printed links in separate browser windows:
+
+```text
+http://127.0.0.1:8765/session/director
+http://127.0.0.1:8765/session/matcher
+```
+
+Supported pairings:
+
+```bash
+--director human --matcher human
+--director human --matcher llm
+--director llm --matcher human
+--director llm --matcher llm
+```
+
+For mixed human/LLM sessions, fill in `ANTHROPIC_API_KEY` in `.env` first.
+
 ## Outputs
 
 Each trial is written to:
@@ -60,4 +90,3 @@ Analysis writes plots, CSVs, and a summary report under `results/{run_id}/`.
 ## Notes
 
 Word counts use whitespace tokenization over director dialogue, not API token counts. Image letters `A` through `L` are only internal IDs; prompts show each participant private numbered images with independently randomized image orders.
-

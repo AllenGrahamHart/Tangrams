@@ -2,23 +2,15 @@ from __future__ import annotations
 
 import os
 import random
-from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Literal
 
 from tangram.client import Speaker, TurnClient
 from tangram.config import ExperimentConfig
 from tangram.logging import TokenUsage, TrialLog, TurnLog, utc_now_iso, write_trial_log
-from tangram.prompts import (
-    DIRECTOR_SYSTEM,
-    MATCHER_SYSTEM,
-    PROMPT_VERSION,
-    between_trials_text,
-    director_trial_text,
-    matcher_trial_text,
-)
+from tangram.participants import Participant, TrialContext, make_client_participants
+from tangram.prompts import PROMPT_VERSION
 from tangram.protocol import infer_position_from_text, parse_model_response, swap_place, visible_partner_message
-from tangram.stimuli import FIGURE_IDS, Stimulus, image_mapping_content, load_tangrams
+from tangram.stimuli import FIGURE_IDS, load_tangrams
 
 
 class PairRunner:
@@ -28,7 +20,8 @@ class PairRunner:
         run_id: str,
         pair_id: int,
         config: ExperimentConfig,
-        client: TurnClient,
+        client: TurnClient | None = None,
+        participants: dict[Speaker, Participant] | None = None,
         stimuli_dir: Path,
         results_dir: Path,
         rng: random.Random | None = None,
@@ -36,7 +29,11 @@ class PairRunner:
         self.run_id = run_id
         self.pair_id = pair_id
         self.config = config
-        self.client = client
+        if participants is None:
+            if client is None:
+                raise ValueError("Either client or participants must be provided.")
+            participants = make_client_participants(client)
+        self.participants = participants
         self.stimuli_dir = stimuli_dir
         self.results_dir = results_dir
         self.rng = rng or random.Random(config.seed)
@@ -44,7 +41,10 @@ class PairRunner:
         if len(self.figure_ids) != config.figures:
             raise ValueError(f"Only {len(FIGURE_IDS)} figures are available; requested {config.figures}.")
         self.stimuli = load_tangrams(stimuli_dir, self.figure_ids)
-        self.histories: dict[Speaker, list[dict[str, Any]]] = {"director": [], "matcher": []}
+        self.histories = {
+            role: getattr(participant, "history", [])
+            for role, participant in self.participants.items()
+        }
 
     def run_pair(self) -> list[TrialLog]:
         logs: list[TrialLog] = []
@@ -62,20 +62,15 @@ class PairRunner:
         director_image_mapping = self._image_mapping()
         matcher_image_mapping = self._image_mapping()
 
-        if hasattr(self.client, "set_trial_context"):
-            self.client.set_trial_context(
-                target_order=target_order,
-                matcher_image_mapping=matcher_image_mapping,
-                trial=trial,
-            )
-
-        self._append_trial_context(
+        context = TrialContext(
             trial=trial,
-            target_order=target_order,
-            matcher_initial=matcher_initial,
+            target_order=list(target_order),
+            matcher_initial=list(matcher_initial),
             director_image_mapping=director_image_mapping,
             matcher_image_mapping=matcher_image_mapping,
         )
+        for participant in self.participants.values():
+            participant.observe_trial_context(context, self.stimuli)
 
         log = TrialLog(
             run_id=self.run_id,
@@ -105,18 +100,12 @@ class PairRunner:
                     and speaker == "director"
                     and not done_cue_sent
                 ):
-                    self.histories["director"].append(
-                        {
-                            "role": "user",
-                            "content": "All 12 positions have now received matcher placement acknowledgments. If you are satisfied, end the trial with <done/>.",
-                        }
+                    self.participants["director"].add_orchestrator_message(
+                        "All 12 positions have now received matcher placement acknowledgments. If you are satisfied, end the trial with <done/>."
                     )
                     done_cue_sent = True
 
-                response = self.client.create_turn(
-                    speaker=speaker,
-                    system=DIRECTOR_SYSTEM if speaker == "director" else MATCHER_SYSTEM,
-                    messages=self.histories[speaker],
+                response = self.participants[speaker].create_turn(
                     config=self.config.model,
                     trial=trial,
                     position=current_position,
@@ -137,6 +126,8 @@ class PairRunner:
                 if speaker == "matcher":
                     self._resolve_actions(parsed.actions, matcher_image_mapping, placements)
                     placed_positions.update(action.position for action in parsed.actions)
+                    if getattr(self.participants["director"], "needs_position_hint", False):
+                        current_position = self._next_unplaced_position(placed_positions)
 
                 effective_handoff = parsed.handoff
                 if effective_handoff == "continue":
@@ -170,19 +161,16 @@ class PairRunner:
                 log.turns.append(turn)
                 log.total_tokens = log.total_tokens.add(response.tokens)
 
-                self._append_turn_to_histories(
-                    speaker,
-                    response.raw_content,
-                    response.text,
-                    partner_visible_text,
-                )
+                self.participants[speaker].record_own_turn(response=response, turn=turn)
+                partner: Speaker = "matcher" if speaker == "director" else "director"
+                self.participants[partner].record_partner_turn(turn=turn)
 
                 if speaker == "director" and parsed.handoff == "done":
                     log.termination = "done"
                     break
 
                 if effective_handoff == "continue":
-                    self.histories[speaker].append({"role": "user", "content": "Continue your turn."})
+                    self.participants[speaker].add_orchestrator_message("Continue your turn.")
                 else:
                     speaker = "matcher" if speaker == "director" else "director"
             else:
@@ -209,51 +197,6 @@ class PairRunner:
         log.estimated_cost_usd = estimate_cost_usd(log.total_tokens)
         return log
 
-    def _append_trial_context(
-        self,
-        *,
-        trial: int,
-        target_order: Sequence[str],
-        matcher_initial: Sequence[str],
-        director_image_mapping: dict[int, str],
-        matcher_image_mapping: dict[int, str],
-    ) -> None:
-        if trial > 1:
-            separator = between_trials_text(trial - 1, trial)
-            self.histories["director"].append({"role": "user", "content": separator})
-            self.histories["matcher"].append({"role": "user", "content": separator})
-
-        director_content = image_mapping_content(
-            self.stimuli,
-            director_image_mapping,
-            heading="Your private numbered images for this trial are below.",
-        )
-        director_content.append(
-            {"type": "text", "text": director_trial_text(trial, target_order, director_image_mapping)}
-        )
-        matcher_content = image_mapping_content(
-            self.stimuli,
-            matcher_image_mapping,
-            heading="Your private numbered images for this trial are below.",
-        )
-        matcher_content.append(
-            {"type": "text", "text": matcher_trial_text(trial, matcher_initial, matcher_image_mapping)}
-        )
-        self.histories["director"].append({"role": "user", "content": director_content})
-        self.histories["matcher"].append({"role": "user", "content": matcher_content})
-
-    def _append_turn_to_histories(
-        self,
-        speaker: Speaker,
-        raw_content: list[dict[str, Any]],
-        raw_text: str,
-        partner_visible_text: str,
-    ) -> None:
-        partner: Speaker = "matcher" if speaker == "director" else "director"
-        assistant_content = raw_content or [{"type": "text", "text": raw_text}]
-        self.histories[speaker].append({"role": "assistant", "content": assistant_content})
-        self.histories[partner].append({"role": "user", "content": partner_visible_text})
-
     def _resolve_actions(
         self,
         actions: list,
@@ -274,6 +217,12 @@ class PairRunner:
     def _image_mapping(self) -> dict[int, str]:
         values = self._permutation()
         return {index: figure_id for index, figure_id in enumerate(values, start=1)}
+
+    def _next_unplaced_position(self, placed_positions: set[int]) -> int:
+        for position in range(1, self.config.figures + 1):
+            if position not in placed_positions:
+                return position
+        return self.config.figures + 1
 
 
 def estimate_cost_usd(tokens: TokenUsage) -> float:
