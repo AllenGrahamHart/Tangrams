@@ -1,6 +1,6 @@
 # Tangram LLM Replication
 
-This repository runs an LLM version of Clark & Wilkes-Gibbs (1986), "Referring as a Collaborative Process." It pairs a director model and matcher model on the original 12 tangram figures for six repeated trials, logs each dialogue, and computes the headline measures from the paper.
+This repository runs a Tangram communication-task replication inspired by Clark & Wilkes-Gibbs (1986), "Referring as a Collaborative Process." It supports LLM and/or human participants in the director and matcher roles, using the original 12 tangram figures across repeated trials, logging each dialogue, and computing the headline measures from the paper.
 
 ## Setup
 
@@ -9,7 +9,7 @@ uv sync --extra dev
 cp .env.example .env
 ```
 
-Fill in `ANTHROPIC_API_KEY` in `.env` before real model runs. A fake deterministic mode is available for tests and dry runs.
+Fill in `ANTHROPIC_API_KEY` in `.env` before any run involving an LLM participant. A fake deterministic mode is available for tests and dry runs.
 
 The stimuli live in `stimuli/tangrams/A.png` through `stimuli/tangrams/L.png`. They were split from the included paper screenshot so each API image block contains one tangram figure.
 
