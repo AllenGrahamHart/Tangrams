@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from tangram.client import make_turn_client
 from tangram.config import ModelConfig
 from tangram.logging import TrialLog
 
@@ -114,19 +115,27 @@ def np_distribution(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def classify_utterance_llm(text: str, model_config: ModelConfig) -> str:
-    from anthropic import Anthropic
-
-    if not os.getenv("ANTHROPIC_API_KEY"):
+    if model_config.provider == "openai" and not os.getenv("OPENAI_API_KEY"):
         return "unclassified"
-    client = Anthropic()
-    response = client.messages.create(
+    if model_config.provider == "anthropic" and not os.getenv("ANTHROPIC_API_KEY"):
+        return "unclassified"
+    client = make_turn_client(model_config)
+    classifier_config = ModelConfig(
+        provider=model_config.provider,
         model=model_config.model,
         max_tokens=20,
+        thinking_budget_tokens=None,
+        reasoning_effort=None,
+    )
+    response = client.create_turn(
+        speaker="director",
         system=CLASSIFICATION_SYSTEM,
         messages=[{"role": "user", "content": text}],
+        config=classifier_config,
+        trial=0,
+        position=0,
     )
-    parts = [getattr(block, "text", "") for block in response.content if getattr(block, "type", "") == "text"]
-    label = " ".join(parts).strip().lower()
+    label = response.text.strip().lower()
     return label if label in NP_TYPES else "unclassified"
 
 
@@ -139,4 +148,3 @@ def _read_cache(path: Path) -> dict[str, str]:
 def _write_cache(path: Path, cache: dict[str, str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(cache, indent=2, sort_keys=True), encoding="utf-8")
-

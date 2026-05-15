@@ -7,7 +7,7 @@ from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel, Field
 
-from tangram.config import ModelConfig
+from tangram.config import DEFAULT_MAX_TOKENS, ModelConfig
 from tangram.logging import TokenUsage
 
 
@@ -36,6 +36,12 @@ class TurnClient(Protocol):
         ...
 
 
+def make_turn_client(config: ModelConfig) -> TurnClient:
+    if config.provider == "openai":
+        return OpenAITurnClient()
+    return AnthropicTurnClient()
+
+
 def _dump_content_block(block: Any) -> dict[str, Any]:
     if hasattr(block, "model_dump"):
         return block.model_dump(mode="json", exclude_none=True)
@@ -48,6 +54,16 @@ def _dump_content_block(block: Any) -> dict[str, Any]:
             if value is not None:
                 data[attr] = value
     return data
+
+
+def _get_value(obj: Any, key: str, default: Any = None) -> Any:
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
+
+
+def _get_int_value(obj: Any, key: str) -> int:
+    return int(_get_value(obj, key, 0) or 0)
 
 
 class AnthropicTurnClient:
@@ -69,9 +85,11 @@ class AnthropicTurnClient:
         position: int,
     ) -> LLMResponse:
         del speaker, trial, position
+        if config.model is None:
+            raise ValueError("Anthropic model must be configured.")
         kwargs: dict[str, Any] = {
             "model": config.model,
-            "max_tokens": config.max_tokens,
+            "max_tokens": config.max_tokens or DEFAULT_MAX_TOKENS,
             "system": system,
             "messages": messages,
         }
@@ -104,9 +122,9 @@ class AnthropicTurnClient:
 
         usage = getattr(response, "usage", None)
         tokens = TokenUsage(
-            input=int(getattr(usage, "input_tokens", 0) or 0),
-            output=int(getattr(usage, "output_tokens", 0) or 0),
-            thinking=int(getattr(usage, "thinking_tokens", 0) or 0),
+            input=_get_int_value(usage, "input_tokens"),
+            output=_get_int_value(usage, "output_tokens"),
+            thinking=_get_int_value(usage, "thinking_tokens"),
         )
         return LLMResponse(
             text="\n".join(part for part in text_parts if part).strip(),
@@ -115,6 +133,118 @@ class AnthropicTurnClient:
             tokens=tokens,
             wall_time_ms=int((time.monotonic() - start) * 1000),
         )
+
+
+class OpenAITurnClient:
+    def __init__(self, *, max_retries: int = 5, initial_backoff: float = 1.0):
+        from openai import OpenAI
+
+        self.client = OpenAI()
+        self.max_retries = max_retries
+        self.initial_backoff = initial_backoff
+
+    def create_turn(
+        self,
+        *,
+        speaker: Speaker,
+        system: str,
+        messages: list[dict[str, Any]],
+        config: ModelConfig,
+        trial: int,
+        position: int,
+    ) -> LLMResponse:
+        del speaker, trial, position
+        if config.model is None:
+            raise ValueError("OpenAI model must be configured.")
+        kwargs: dict[str, Any] = {
+            "model": config.model,
+            "instructions": system,
+            "input": [_to_openai_message(message) for message in messages],
+        }
+        if config.max_tokens is not None:
+            kwargs["max_output_tokens"] = config.max_tokens
+        if config.reasoning:
+            kwargs["reasoning"] = config.reasoning
+
+        start = time.monotonic()
+        for attempt in range(self.max_retries):
+            try:
+                response = self.client.responses.create(**kwargs)
+                return self._to_llm_response(response, start)
+            except Exception as exc:
+                status_code = getattr(exc, "status_code", None)
+                retryable = status_code == 429 or (isinstance(status_code, int) and status_code >= 500)
+                if not retryable or attempt == self.max_retries - 1:
+                    raise
+                sleep_for = self.initial_backoff * (2**attempt) + random.random()
+                time.sleep(sleep_for)
+        raise RuntimeError("Unreachable OpenAI retry state.")
+
+    def _to_llm_response(self, response: Any, start: float) -> LLMResponse:
+        text = str(getattr(response, "output_text", "") or "").strip()
+        raw_content = [{"type": "text", "text": text}] if text else []
+
+        usage = getattr(response, "usage", None)
+        output_details = _get_value(usage, "output_tokens_details")
+        tokens = TokenUsage(
+            input=_get_int_value(usage, "input_tokens"),
+            output=_get_int_value(usage, "output_tokens"),
+            thinking=_get_int_value(output_details, "reasoning_tokens"),
+        )
+        return LLMResponse(
+            text=text,
+            raw_content=raw_content,
+            tokens=tokens,
+            wall_time_ms=int((time.monotonic() - start) * 1000),
+        )
+
+
+def _to_openai_message(message: dict[str, Any]) -> dict[str, Any]:
+    role = message.get("role", "user")
+    content = message.get("content", "")
+    if isinstance(content, str):
+        return {"role": role, "content": content}
+    if role == "assistant":
+        return {"role": role, "content": _text_from_content_blocks(content)}
+    return {"role": role, "content": _to_openai_content(content)}
+
+
+def _to_openai_content(content: Any) -> list[dict[str, Any]]:
+    if not isinstance(content, list):
+        return [{"type": "input_text", "text": str(content)}]
+
+    converted: list[dict[str, Any]] = []
+    for block in content:
+        if not isinstance(block, dict):
+            converted.append({"type": "input_text", "text": str(block)})
+            continue
+        if block.get("type") == "text":
+            converted.append({"type": "input_text", "text": str(block.get("text", ""))})
+        elif block.get("type") == "image":
+            source = block.get("source", {})
+            if source.get("type") == "base64":
+                media_type = source.get("media_type", "image/png")
+                data = source.get("data", "")
+                converted.append(
+                    {
+                        "type": "input_image",
+                        "image_url": f"data:{media_type};base64,{data}",
+                        "detail": "auto",
+                    }
+                )
+    return converted
+
+
+def _text_from_content_blocks(content: Any) -> str:
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return str(content)
+    parts: list[str] = []
+    for block in content:
+        if isinstance(block, dict) and block.get("type") == "text":
+            parts.append(str(block.get("text", "")))
+    return "\n".join(part for part in parts if part).strip()
 
 
 class FakeTangramClient:

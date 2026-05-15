@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable
 
-from tangram.client import AnthropicTurnClient, TurnClient
+from tangram.client import TurnClient, make_turn_client
 from tangram.config import ExperimentConfig, default_results_dir, default_stimuli_dir
 from tangram.logging import Manifest, TrialLog, utc_now_iso, write_manifest
 from tangram.prompts import DIRECTOR_SYSTEM, MATCHER_SYSTEM, PROMPT_VERSION
@@ -28,7 +28,7 @@ def run_experiment(
     run_id = config.resolved_run_id()
     results_root = results_dir or default_results_dir()
     stimuli_root = stimuli_dir or default_stimuli_dir()
-    factory = client_factory or (lambda: AnthropicTurnClient())
+    factory = client_factory or (lambda: make_turn_client(config.model))
 
     manifest = Manifest(
         run_id=run_id,

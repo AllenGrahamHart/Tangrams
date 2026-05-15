@@ -14,14 +14,13 @@ Our goal is to test whether LLM pairs reproduce these effects.
 
 Build a self-contained Python repository that:
 
-1. Runs dyadic LLM-vs-LLM Tangram dialogues via the Anthropic API.
+1. Runs dyadic Tangram dialogues with LLM and/or human participants.
 2. Logs everything needed to replicate the paper's analyses.
 3. Computes the headline metrics (words/figure, turns/figure, accuracy, NP type distribution) and produces plots analogous to the paper's Figures 2–4.
-4. Is parameterizable: number of pairs, number of trials, model choice, thinking budget, system prompt variants.
+4. Is parameterizable: number of pairs, number of trials, model provider, model choice, optional reasoning/thinking settings, system prompt variants.
 
 Do **not** build:
 - A multi-agent orchestration framework (no LangGraph, no AutoGen, no agent runtimes — just direct API calls).
-- A web UI.
 - Sandboxed execution environments — the LLMs only emit text + structured actions.
 
 ---
@@ -30,6 +29,8 @@ Do **not** build:
 
 - **Python 3.11+**
 - **Anthropic SDK** (`anthropic`) — use the official Python client.
+- **OpenAI SDK** (`openai`) — use the official Python client.
+- **FastAPI/Uvicorn** for the local human-participant web UI.
 - **Pydantic** for data models / structured outputs.
 - **uv** for dependency management (preferred over pip/poetry).
 - **pytest** for tests.
@@ -38,7 +39,7 @@ Do **not** build:
 
 Keep dependencies minimal. No frameworks beyond these.
 
-Default model: `claude-sonnet-4-5` with extended thinking enabled (medium budget). Make this configurable.
+Default provider/model: Anthropic `claude-sonnet-4-5`. Extended thinking/reasoning controls are opt-in, not enabled by default.
 
 ---
 
@@ -226,15 +227,17 @@ Store the system prompts in `prompts.py` as constants with a version number. Log
 
 ## API integration
 
-Use the Anthropic Python SDK. Each turn is a single `messages.create` call. Maintain two parallel message histories (one per participant). The orchestrator decides whose turn it is and calls the appropriate API.
+Use provider-specific clients behind a common `TurnClient` protocol. Anthropic turns use `messages.create`; OpenAI turns use the Responses API. Maintain two parallel message histories (one per participant). The orchestrator decides whose turn it is and calls the appropriate API.
 
 ### Model & thinking config
 
 ```python
 DEFAULT_CONFIG = {
+    "provider": "anthropic",
     "model": "claude-sonnet-4-5",
-    "max_tokens": 4096,
-    "thinking": {"type": "enabled", "budget_tokens": 2000},
+    "max_tokens": None,
+    "thinking_budget_tokens": None,
+    "reasoning_effort": None,
 }
 ```
 
@@ -242,7 +245,7 @@ Make this overridable per-experiment via `config.py`.
 
 ### Thinking traces
 
-**Critical**: extended thinking output must NOT be included in the dialogue history visible to the partner. Each model sees only their own thinking + the partner's final text responses. Implementation: when adding a turn to the partner's message history, strip `thinking` blocks; when adding to the speaker's own history (for their next turn), preserve them per Anthropic's API requirements.
+**Critical**: hidden reasoning/thinking output must NOT be included in the dialogue history visible to the partner. Each model sees only its own provider-visible state plus the partner's final text responses. Implementation: when adding a turn to the partner's message history, strip non-spoken reasoning/thinking blocks.
 
 ### Rate limiting & retries
 
@@ -361,8 +364,8 @@ Each plot should also save its underlying data as CSV alongside.
 python -m scripts.run_experiment \
     --pairs 8 \
     --trials 6 \
+    --provider anthropic \
     --model claude-sonnet-4-5 \
-    --thinking-budget 2000 \
     --concurrency 4 \
     --run-id my_first_run
 ```
@@ -385,7 +388,7 @@ The inspect script should pretty-print a transcript with speaker labels, timesta
 
 ## Tests
 
-Mock the Anthropic API in tests using a fake client that returns canned responses. Test:
+Mock provider APIs in tests using fake clients that return canned responses. Test:
 
 - `test_stimuli.py`: 12 figures load correctly, base64 encoding works, missing files raise.
 - `test_protocol.py`: handoff parsing, structured action parsing, turn-cap enforcement, malformed responses are handled gracefully.
@@ -425,7 +428,7 @@ After step 5, manually run a single pair through 6 trials and read the transcrip
 - **Matcher rubber-stamping** — if the matcher places without engaging, accuracy will be near-chance. Watch for this in the first trial run; consider a system-prompt nudge.
 - **Director never emitting `<done/>`** — set the turn cap and log termination reasons. If most trials hit the cap, the protocol prompt needs work.
 - **Token counts as a proxy for word count** — the paper measures whitespace-split words. Use the same in metrics, not API tokens. Document this clearly.
-- **Cost** — at thinking-budget 2000 with Sonnet, a single trial of ~50 turns is roughly $0.50–1.00. 8 pairs × 6 trials ≈ $25–50 per run. Log it; don't be surprised.
+- **Cost** — image-heavy repeated-reference runs can be expensive, especially with optional reasoning/thinking enabled. Log it; don't be surprised.
 
 ---
 

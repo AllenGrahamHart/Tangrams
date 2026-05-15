@@ -9,7 +9,7 @@ uv sync --extra dev
 cp .env.example .env
 ```
 
-Fill in `ANTHROPIC_API_KEY` in `.env` before any run involving an LLM participant. A fake deterministic mode is available for tests and dry runs.
+Fill in `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in `.env` before any run involving an LLM participant. A fake deterministic mode is available for tests and dry runs.
 
 The stimuli live in `stimuli/tangrams/A.png` through `stimuli/tangrams/L.png`. They were split from the included paper screenshot so each API image block contains one tangram figure.
 
@@ -27,13 +27,28 @@ Real Anthropic run:
 
 ```bash
 uv run python -m scripts.run_experiment \
+  --provider anthropic \
   --pairs 8 \
   --trials 6 \
   --model claude-sonnet-4-5 \
-  --thinking-budget 2000 \
   --concurrency 4 \
   --run-id my_first_run
 ```
+
+Real OpenAI run:
+
+```bash
+uv run python -m scripts.run_experiment \
+  --provider openai \
+  --pairs 8 \
+  --trials 6 \
+  --model gpt-5.2 \
+  --reasoning-effort xhigh \
+  --concurrency 4 \
+  --run-id my_openai_run
+```
+
+Reasoning controls are opt-in. Use `--thinking-budget` only when you intentionally want to enable Anthropic extended thinking with a fixed token budget. Use `--reasoning-effort` only when you intentionally want to set OpenAI reasoning effort.
 
 Then analyze:
 
@@ -69,7 +84,7 @@ Supported pairings:
 --director llm --matcher llm
 ```
 
-For mixed human/LLM sessions, fill in `ANTHROPIC_API_KEY` in `.env` first.
+For mixed human/LLM sessions, fill in the API key for the selected provider in `.env` first. Use `--provider openai` or `--provider anthropic` to choose the LLM backend.
 
 ## Outputs
 

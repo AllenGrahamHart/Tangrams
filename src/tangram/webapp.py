@@ -9,8 +9,8 @@ from typing import Literal
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 
-from tangram.client import AnthropicTurnClient, Speaker
-from tangram.config import ExperimentConfig, default_results_dir, default_stimuli_dir
+from tangram.client import Speaker, make_turn_client
+from tangram.config import ExperimentConfig, ModelConfig, default_results_dir, default_stimuli_dir
 from tangram.experiment import (
     current_git_commit,
     current_git_dirty,
@@ -121,7 +121,9 @@ def build_participants(
     manager: HumanSessionManager,
     director: ParticipantKind,
     matcher: ParticipantKind,
+    model_config: ModelConfig | None = None,
 ) -> dict[Speaker, Participant]:
+    resolved_model_config = model_config or ModelConfig()
     participants: dict[Speaker, Participant] = {}
     if director == "human":
         participants["director"] = HumanParticipant(
@@ -131,7 +133,7 @@ def build_participants(
     else:
         participants["director"] = ClientParticipant(
             role="director",
-            client=AnthropicTurnClient(),
+            client=make_turn_client(resolved_model_config),
         )
 
     if matcher == "human":
@@ -142,7 +144,7 @@ def build_participants(
     else:
         participants["matcher"] = ClientParticipant(
             role="matcher",
-            client=AnthropicTurnClient(),
+            client=make_turn_client(resolved_model_config),
         )
     return participants
 

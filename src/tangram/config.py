@@ -3,26 +3,57 @@ from __future__ import annotations
 import os
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import BaseModel, Field, PositiveInt, model_validator
 
 
-DEFAULT_MODEL = "claude-sonnet-4-5"
+ModelProvider = Literal["anthropic", "openai"]
+ReasoningEffort = Literal["none", "low", "medium", "high", "xhigh"]
+
+DEFAULT_PROVIDER: ModelProvider = "anthropic"
+DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-5"
+DEFAULT_OPENAI_MODEL = "gpt-5.2"
 DEFAULT_MAX_TOKENS = 4096
-DEFAULT_THINKING_BUDGET = 2000
+
+
+def default_provider() -> ModelProvider:
+    value = os.getenv("TANGRAM_PROVIDER", DEFAULT_PROVIDER).strip().lower()
+    if value not in ("anthropic", "openai"):
+        raise ValueError("TANGRAM_PROVIDER must be 'anthropic' or 'openai'.")
+    return value
+
+
+def default_model_for_provider(provider: ModelProvider) -> str:
+    if provider == "openai":
+        return DEFAULT_OPENAI_MODEL
+    return DEFAULT_ANTHROPIC_MODEL
 
 
 class ModelConfig(BaseModel):
-    model: str = Field(default_factory=lambda: os.getenv("TANGRAM_MODEL", DEFAULT_MODEL))
-    max_tokens: PositiveInt = DEFAULT_MAX_TOKENS
-    thinking_budget_tokens: int = Field(default=DEFAULT_THINKING_BUDGET, ge=0)
+    provider: ModelProvider = Field(default_factory=default_provider)
+    model: str | None = Field(default_factory=lambda: os.getenv("TANGRAM_MODEL") or None)
+    max_tokens: PositiveInt | None = None
+    thinking_budget_tokens: int | None = Field(default=None, ge=0)
+    reasoning_effort: ReasoningEffort | None = None
+
+    @model_validator(mode="after")
+    def fill_default_model(self) -> "ModelConfig":
+        if self.model is None:
+            self.model = default_model_for_provider(self.provider)
+        return self
 
     @property
     def thinking(self) -> dict[str, Any] | None:
-        if self.thinking_budget_tokens <= 0:
+        if not self.thinking_budget_tokens:
             return None
         return {"type": "enabled", "budget_tokens": self.thinking_budget_tokens}
+
+    @property
+    def reasoning(self) -> dict[str, Any] | None:
+        if self.reasoning_effort is None:
+            return None
+        return {"effort": self.reasoning_effort}
 
 
 class ExperimentConfig(BaseModel):
@@ -75,4 +106,3 @@ def load_dotenv(path: str | Path = ".env") -> None:
         value = value.strip().strip('"').strip("'")
         if key and key not in os.environ:
             os.environ[key] = value
-

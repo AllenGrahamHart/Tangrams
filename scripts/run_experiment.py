@@ -12,9 +12,21 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run LLM Tangram replication experiments.")
     parser.add_argument("--pairs", type=int, default=8)
     parser.add_argument("--trials", type=int, default=6)
+    parser.add_argument("--provider", choices=["anthropic", "openai"], default=None)
     parser.add_argument("--model", default=None)
-    parser.add_argument("--max-tokens", type=int, default=4096)
-    parser.add_argument("--thinking-budget", type=int, default=2000)
+    parser.add_argument("--max-tokens", type=int, default=None)
+    parser.add_argument(
+        "--thinking-budget",
+        type=int,
+        default=None,
+        help="Optional Anthropic extended-thinking budget. Omitted by default.",
+    )
+    parser.add_argument(
+        "--reasoning-effort",
+        choices=["none", "low", "medium", "high", "xhigh"],
+        default=None,
+        help="Optional OpenAI reasoning effort. Omitted by default.",
+    )
     parser.add_argument("--concurrency", type=int, default=4)
     parser.add_argument("--max-turns", type=int, default=200)
     parser.add_argument("--run-id", default=None)
@@ -27,10 +39,15 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     load_dotenv()
     args = parse_args()
+    default_model = ModelConfig()
+    provider = args.provider or default_model.provider
+    model_name = args.model or (default_model.model if args.provider is None else None)
     model = ModelConfig(
-        model=args.model or ModelConfig().model,
+        provider=provider,
+        model=model_name,
         max_tokens=args.max_tokens,
         thinking_budget_tokens=args.thinking_budget,
+        reasoning_effort=args.reasoning_effort,
     )
     config = ExperimentConfig(
         pairs=args.pairs,
@@ -52,4 +69,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
