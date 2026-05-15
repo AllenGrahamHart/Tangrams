@@ -50,28 +50,14 @@ The main quantitative contrast is stark. In the three completed GPT-5.5 trials, 
 \centering
 \begin{tabular}{lrrrr}
 \toprule
-Run & Complete trials & Correct / positions & Accuracy & Director words/figure \\
+Run & Trials included & Accuracy & Words/figure & Turns/figure \\
 \midrule
-Haiku 4.5 & 6 & 32 / 72 & .444 & 107.76 \\
-GPT-5.5 xhigh & 3 & 36 / 36 & 1.000 & 43.72 \\
+Human paper & 6 & $\sim$.98 & $\sim$16.8 & $\sim$1.77 \\
+Haiku 4.5 & 6 & .444 & 107.76 & 1.10 \\
+GPT-5.5 xhigh & 3 & 1.000 & 43.72 & 1.00 \\
 \bottomrule
 \end{tabular}
-\caption{Pilot comparison using completed trials only. GPT-5.5 trial 4 was substantively near-complete but terminated with an API quota error, so it is not included in this table.}
-\end{table}
-
-\begin{table}[h]
-\centering
-\begin{tabular}{rrrr}
-\toprule
-Trial & GPT-5.5 correct / 12 & GPT-5.5 words/figure & Termination \\
-\midrule
-1 & 12 & 52.83 & done \\
-2 & 12 & 38.08 & done \\
-3 & 12 & 40.25 & done \\
-4 & 12 & 37.00 & quota error near position 11 \\
-\bottomrule
-\end{tabular}
-\caption{GPT-5.5 partial run. Trial 4 reached a quota error before normal completion. Its final logged arrangement happened to match the target, but the trial did not end cleanly.}
+\caption{Headline comparison. The human row uses the published approximate 2\% error rate and the mean of the published words- and turns-per-figure values across the six trials. GPT-5.5 includes completed trials only; trial 4 was substantively near-complete but terminated with an API quota error.}
 \end{table}
 
 \subsection*{Words per figure}
@@ -80,24 +66,26 @@ The strongest contrast with the human data is in the word-count trajectory. Huma
 
 \begin{table}[h]
 \centering
-\begin{tabular}{rrrr}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{rrrrrr}
 \toprule
-Trial & Haiku words/figure & Human words/figure & Difference \\
+Trial & Haiku words/figure & GPT-5.5 words/figure & Human words/figure & Haiku correct & GPT correct \\
 \midrule
-1 & 107.50 & 41 & +66.50 \\
-2 & 109.33 & 19 & +90.33 \\
-3 & 107.42 & 13 & +94.42 \\
-4 & 108.50 & 11 & +97.50 \\
-5 & 107.25 & 9 & +98.25 \\
-6 & 106.58 & 8 & +98.58 \\
+1 & 107.50 & 52.83 & 41 & 5/12 & 12/12 \\
+2 & 109.33 & 38.08 & 19 & 6/12 & 12/12 \\
+3 & 107.42 & 40.25 & 13 & 5/12 & 12/12 \\
+4 & 108.50 & 37.00 & 11 & 6/12 & quota error \\
+5 & 107.25 & -- & 9 & 4/12 & -- \\
+6 & 106.58 & -- & 8 & 6/12 & -- \\
 \bottomrule
 \end{tabular}
-\caption{Mean director words per figure. Human values are the published approximate means from Clark and Wilkes-Gibbs.}
+}
+\caption{Words per figure and accuracy by trial. Human values are the published approximate means from Clark and Wilkes-Gibbs. GPT-5.5 trial 4 did not terminate normally, and trials 5--6 were not completed.}
 \end{table}
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.72\linewidth]{report_figures/haiku_45_words_per_trial.png}
+\includegraphics[width=0.72\linewidth]{report_figures/model_words_per_trial.png}
 \caption{Words per figure by trial.}
 \end{figure}
 
@@ -128,43 +116,9 @@ The original human error rate was about 2\%. Haiku's accuracy was much lower and
 
 This is nevertheless well above a random-ordering baseline. For a random permutation of 12 figures, the expected number of correct positions is 1 per trial, or 6 correct placements over six trials. Under the exact random-permutation distribution, obtaining 32 or more correct placements out of 72 has probability approximately $9.1 \times 10^{-14}$. Thus, Haiku was not guessing: it extracted useful information from the images and dialogue, but did so much less effectively than human participants.
 
-\begin{table}[h]
-\centering
-\begin{tabular}{rrr}
-\toprule
-Trial & Correct / 12 & Accuracy \\
-\midrule
-1 & 5 & .417 \\
-2 & 6 & .500 \\
-3 & 5 & .417 \\
-4 & 6 & .500 \\
-5 & 4 & .333 \\
-6 & 6 & .500 \\
-\bottomrule
-\end{tabular}
-\caption{Haiku placement accuracy by trial.}
-\end{table}
-
 \subsection*{Basic exchanges}
 
 In the human data, basic exchanges increased from 18\% on trial 1 to over 80\% by trials 4--6. Haiku's exchanges were basic in a different and less successful sense. After trial 1, every placement met our heuristic definition of a basic exchange: the director presented a reference and the matcher placed a figure in the first response. But this high basic-exchange rate co-occurred with low accuracy, suggesting premature acceptance rather than well-established shared reference.
-
-\begin{table}[h]
-\centering
-\begin{tabular}{rrr}
-\toprule
-Trial & Haiku basic exchange rate & Human basic exchange rate \\
-\midrule
-1 & .50 & .18 \\
-2 & 1.00 & .55 \\
-3 & 1.00 & .75 \\
-4 & 1.00 & .80 \\
-5 & 1.00 & .88 \\
-6 & 1.00 & .84 \\
-\bottomrule
-\end{tabular}
-\caption{Basic exchange rate by trial.}
-\end{table}
 
 \subsection*{Position effects}
 
@@ -176,25 +130,27 @@ The paper reported figure-level differences, with Figure B hardest and Figure C 
 
 \begin{table}[h]
 \centering
-\begin{tabular}{rrrr}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{rrrrrr}
 \toprule
-Figure & Haiku words/figure & Haiku turns/figure & Accuracy \\
+Figure & Haiku words/figure & Haiku accuracy & GPT words/figure & GPT accuracy & GPT label \\
 \midrule
-A & 86.83 & 0.83 & .000 \\
-B & 138.67 & 1.50 & .000 \\
-C & 94.83 & 1.00 & .167 \\
-D & 114.67 & 1.17 & .167 \\
-E & 132.67 & 1.33 & .167 \\
-F & 110.00 & 1.00 & .833 \\
-G & 118.33 & 1.17 & .833 \\
-H & 86.33 & 1.00 & .667 \\
-I & 90.00 & 0.83 & .667 \\
-J & 134.50 & 1.50 & 1.000 \\
-K & 102.67 & 1.00 & .667 \\
-L & 83.67 & 0.83 & .167 \\
+A & 86.83 & .000 & 49.00 & 1.000 & very tall skinny / raised hand \\
+B & 138.67 & .000 & 44.00 & 1.000 & seated-bird-like \\
+C & 94.83 & .167 & 42.00 & 1.000 & flying-bird-like diagonal \\
+D & 114.67 & .167 & 44.33 & 1.000 & tall upright / left shelf \\
+E & 132.67 & .167 & 42.33 & 1.000 & windmill-top \\
+F & 110.00 & .833 & 46.33 & 1.000 & low crouching \\
+G & 118.33 & .833 & 48.00 & 1.000 & paper-plane triangle \\
+H & 86.33 & .667 & 30.00 & 1.000 & bottle-like diamond-headed \\
+I & 90.00 & .667 & 45.33 & 1.000 & left-pointing beak/arrow \\
+J & 134.50 & 1.000 & 48.00 & 1.000 & chunky upright rectangular \\
+K & 102.67 & .667 & 41.00 & 1.000 & seated / right-pointing arm \\
+L & 83.67 & .167 & 44.33 & 1.000 & upright zigzag \\
 \bottomrule
 \end{tabular}
-\caption{Haiku figure-level difficulty over six trials. Each figure appeared once per trial.}
+}
+\caption{Figure-level results. Haiku values use six trials; GPT-5.5 values use the three completed trials only. GPT labels summarize recurring director expressions.}
 \end{table}
 
 \section*{Qualitative Impression}
