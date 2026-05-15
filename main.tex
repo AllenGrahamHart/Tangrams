@@ -4,6 +4,20 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage[most]{tcolorbox}
+
+\newtcolorbox{modelquote}[1]{
+  colback=blue!5,
+  colframe=blue!35,
+  title=#1,
+  fonttitle=\bfseries,
+  arc=1mm,
+  boxrule=0.6pt,
+  left=6pt,
+  right=6pt,
+  top=6pt,
+  bottom=6pt
+}
 
 \title{A Pilot LLM Replication of Clark and Wilkes-Gibbs' Tangram Task}
 \author{}
@@ -16,17 +30,49 @@
 
 Clark and Wilkes-Gibbs (1986) showed that pairs of human participants rapidly converge on concise referring expressions when they repeatedly collaborate on a Tangram arrangement task. In the original study, a director and matcher had the same 12 abstract Tangram figures in different orders. The director's task was to get the matcher to rearrange their figures into the director's order, proceeding through positions 1--12. The same pair repeated the task for six trials. The central finding was a large reduction in director words and turns per figure across trials, accompanied by very high accuracy.
 
-We ran a first pilot version of the same task using Claude Haiku 4.5 as both director and matcher. The instructions were intentionally minimal: the models were told the task situation, the hidden-arrangement constraint, the 1--12 ordering procedure, and the required text-interface actions. We did not instruct the models to use particular descriptive strategies, to be tentative, to compare figures, or to ask clarifying questions. Thus, the run was designed as a close text-only analogue of the paper's task constraints rather than an optimized prompt for model performance.
+We ran a first pilot version of the same task using Claude Haiku 4.5 as both director and matcher. We then ran the same setup with GPT-5.5 at \texttt{xhigh} reasoning effort. The instructions were intentionally minimal: the models were told the task situation, the hidden-arrangement constraint, the 1--12 ordering procedure, and the required text-interface actions. We did not instruct the models to use particular descriptive strategies, to be tentative, to compare figures, or to ask clarifying questions. Thus, the run was designed as a close text-only analogue of the paper's task constraints rather than an optimized prompt for model performance.
 
-This report summarizes one complete Haiku pair over six trials. It should be treated as a pilot, not as an inferential comparison to the full human sample.
+This report summarizes one complete Haiku pair over six trials and one partial GPT-5.5 pair. It should be treated as a pilot, not as an inferential comparison to the full human sample.
 
 \section*{Method}
 
-The model was \texttt{claude-haiku-4-5-20251001}. Both roles retained the full prior dialogue across trials, as in the human repeated-reference design. The 12 Tangram figures were shown as separate images. Internal figure labels were used only for scoring and were not presented as shared labels. Each participant had private image numbers, independently randomized, and these were not valid communicative references.
+The first model was \texttt{claude-haiku-4-5-20251001}. The second model was \texttt{gpt-5.5} with \texttt{xhigh} reasoning effort. Both roles retained the full prior dialogue across trials, as in the human repeated-reference design. The 12 Tangram figures were shown as separate images. Internal figure labels were used only for scoring and were not presented as shared labels. Each participant had private image numbers, independently randomized, and these were not valid communicative references.
 
-The run used a minimal paper-style instruction set. All six trials terminated normally, and the resulting transcripts are complete for all six trials.
+Both runs used the same minimal paper-style instruction set. The Haiku run terminated normally for all six trials. The GPT-5.5 run terminated normally for trials 1--3, then hit an OpenAI \texttt{insufficient\_quota} error near the end of trial 4. Trial 5 immediately failed for the same reason and is excluded from substantive interpretation. The GPT-5.5 results are therefore partial and should be read as qualitative pilot evidence.
 
 \section*{Primary Results}
+
+\subsection*{Model comparison}
+
+The main quantitative contrast is stark. In the three completed GPT-5.5 trials, every placement was correct. Haiku was well above a random baseline but much less accurate. GPT-5.5 also used many fewer director words per figure than Haiku, especially after the first trial. It did not reproduce the human six-trial trajectory because the run stopped early, but it did show immediate successful use of distinctive visual descriptions and some reuse of shared labels.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+Run & Complete trials & Correct / positions & Accuracy & Director words/figure \\
+\midrule
+Haiku 4.5 & 6 & 32 / 72 & .444 & 107.76 \\
+GPT-5.5 xhigh & 3 & 36 / 36 & 1.000 & 43.72 \\
+\bottomrule
+\end{tabular}
+\caption{Pilot comparison using completed trials only. GPT-5.5 trial 4 was substantively near-complete but terminated with an API quota error, so it is not included in this table.}
+\end{table}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{rrrr}
+\toprule
+Trial & GPT-5.5 correct / 12 & GPT-5.5 words/figure & Termination \\
+\midrule
+1 & 12 & 52.83 & done \\
+2 & 12 & 38.08 & done \\
+3 & 12 & 40.25 & done \\
+4 & 12 & 37.00 & quota error near position 11 \\
+\bottomrule
+\end{tabular}
+\caption{GPT-5.5 partial run. Trial 4 reached a quota error before normal completion. Its final logged arrangement happened to match the target, but the trial did not end cleanly.}
+\end{table}
 
 \subsection*{Words per figure}
 
@@ -157,14 +203,34 @@ The transcripts suggest that Haiku understood the formal mechanics of the task b
 
 In the human study, reduced word and turn counts reflected successful convergence on mutually accepted perspectives. In the Haiku pilot, low turn counts appear to reflect premature placement rather than mutual understanding. The model did not show the central Clark and Wilkes-Gibbs pattern: repeated collaboration did not yield shorter, stable, successful referring expressions.
 
+\begin{modelquote}{Haiku example: generic geometric description}
+\emph{``This figure has a rotated square at the top, and below it is a larger angular shape that extends downward and slightly to the right. The body is more jagged and irregular compared to position 2, with a pointed or angular bottom section.''}
+\end{modelquote}
+
+GPT-5.5 behaved differently. Its first-trial descriptions were still detailed, but they were organized around distinctive, image-specific visual anchors. The director combined overall silhouette, head type and location, distinctive appendages, and base or foot shape. Examples include \emph{flying-bird-like diagonal}, \emph{low crouching}, \emph{upright zigzag}, \emph{diamond head}, \emph{tilted square head}, \emph{left-pointing beak/arrow}, \emph{paper-plane triangle}, \emph{raised hand}, \emph{flat-bottomed base}, and \emph{slanted lower-left foot}. These expressions were sufficiently discriminating for the matcher to identify the intended figure on the first placement attempt in every completed trial.
+
+\begin{modelquote}{GPT-5.5 example: distinctive visual anchors}
+\emph{``Position 3: the flying-bird-like figure: a long diagonal body sweeping from upper left down to lower right, with a small tilted square block sitting on the upper left wing/edge. It has a pointed tail/wing jutting left, and a raised forked/curved point on the upper right like an upturned wing.''}
+\end{modelquote}
+
+By trial 2, GPT-5.5 was already reusing shared labels established in the prior dialogue. Figure E became the \emph{windmill-top figure}; H became the \emph{simple upright bottle-like diamond-headed figure}; L became the \emph{upright zigzag diamond-headed figure}; C became the \emph{flying-bird-like diagonal figure}; and I became the \emph{diamond-headed diagonal figure with the left-pointing beak/arrow}. This resembles the qualitative direction of the human findings: the pair converged on stable perspectives. The difference is that GPT-5.5 achieved high accuracy almost immediately, with relatively little negotiation, rather than gradually constructing these conventions through many repair sequences.
+
+\begin{modelquote}{GPT-5.5 example: reuse of shared labels}
+\emph{``Position 1: use the diamond-headed diagonal figure from last trial with the long left-pointing beak/arrow at mid-height, a small bump/tail on the right side, and a long vertical leg dropping down near the lower right to a flat foot.''}
+\end{modelquote}
+
+No evidence of hidden information leakage was observed in these transcripts. The successful GPT-5.5 exchanges appear to depend on visually grounded descriptions and the reuse of shared referring expressions, not on private image numbers or internal figure labels.
+
 \section*{Limitations}
 
-This is a single-pair pilot and should not be treated as a model-level estimate. No manual qualitative coding has yet been performed for the richer categories in the paper, such as initial noun phrase type, repairs, expansions, replacements, follow-ups, analogical versus literal perspective, or holistic versus segmental description. Audio-dependent phenomena from the original study, including intonation and overlap, are not available in this text-only setting.
+This is a single-pair pilot and should not be treated as a model-level estimate. The GPT-5.5 run is partial because it exhausted available OpenAI quota during trial 4. No manual qualitative coding has yet been performed for the richer categories in the paper, such as initial noun phrase type, repairs, expansions, replacements, follow-ups, analogical versus literal perspective, or holistic versus segmental description. Audio-dependent phenomena from the original study, including intonation and overlap, are not available in this text-only setting.
 
-The run used 2.41 million input tokens and 24,011 output tokens, with an estimated API cost of \$7.60. This has no human analogue but is useful for planning larger model samples.
+The Haiku run used 2.41 million input tokens and 24,011 output tokens, with an estimated API cost of \$7.60. The partial GPT-5.5 run used 485,337 input tokens, 21,399 output tokens, and 16,693 reasoning tokens before quota exhaustion, with an estimated API cost of \$3.57 using the configured GPT-5.5 rates. These costs have no human analogue but are useful for planning larger model samples.
 
 \section*{Conclusion}
 
-Under minimal instructions closely matching the task constraints of Clark and Wilkes-Gibbs, Claude Haiku 4.5 completed the six-trial Tangram task and performed far above a random-ordering baseline. However, it performed poorly relative to human participants. It did not become more concise, did not become more accurate, and did not show evidence of the progressive conventionalization that characterized the human dialogues. The result is therefore a useful negative pilot: the model can extract some task-relevant information and enact the task protocol, but the collaborative process observed in human pairs does not emerge automatically from this setup.
+Under minimal instructions closely matching the task constraints of Clark and Wilkes-Gibbs, Claude Haiku 4.5 completed the six-trial Tangram task and performed far above a random-ordering baseline. However, it performed poorly relative to human participants. It did not become more concise, did not become more accurate, and did not show evidence of successful progressive conventionalization.
+
+GPT-5.5 showed a different pattern in the partial run. It was perfectly accurate in the three complete trials and produced much more discriminating descriptions. It also reused stable labels across trials, suggesting a closer qualitative resemblance to the human process of establishing shared perspectives. The evidence remains preliminary because the GPT-5.5 run did not complete all six trials, but the contrast with Haiku is already informative: the stronger model appears able to ground reference in the visual structure of the figures and maintain those references across repeated trials.
 
 \end{document}
